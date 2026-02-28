@@ -38,17 +38,25 @@ class _ProjectMonitoringScreenState extends State<ProjectMonitoringScreen> {
               itemBuilder: (context, index) {
                 final project = filteredProjects[index];
                 final client = dummyClients.firstWhere((c) => c.id == project.clientId);
+                final freelancer = dummyUsers.firstWhere((u) => u.role == 'Freelancer');
                 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: ListTile(
                     title: Text(project.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Client: ${client.name}\nBudget: ${AppConstants.currencySymbol}${project.budget}'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Client: ${client.name}'),
+                        Text('Freelancer: ${freelancer.name}', style: const TextStyle(color: Colors.grey)),
+                        Text('Budget: ${AppConstants.currencySymbol}${project.budget}'),
+                      ],
+                    ),
                     isThreeLine: true,
                     trailing: Chip(
-                      label: Text(project.status, style: const TextStyle(fontSize: 10, color: Colors.white)),
-                      backgroundColor: project.status == 'Completed' ? Colors.green : Colors.orange,
+                      label: Text(project.status, style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                      backgroundColor: project.status == 'Completed' ? Colors.green : (project.status == 'Pending' ? Colors.redAccent : Colors.orange),
                     ),
                   ),
                 );

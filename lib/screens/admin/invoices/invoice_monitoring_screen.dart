@@ -14,6 +14,7 @@ class InvoiceMonitoringScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final invoice = dummyInvoices[index];
           final client = dummyClients.firstWhere((c) => c.id == invoice.clientId);
+          final freelancer = dummyUsers.firstWhere((u) => u.role == 'Freelancer');
           
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
@@ -24,7 +25,13 @@ class InvoiceMonitoringScreen extends StatelessWidget {
                 child: Icon(Icons.receipt, color: invoice.status == 'Paid' ? Colors.green : Colors.redAccent),
               ),
               title: Text('Invoice #${invoice.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('Client: ${client.name}'),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Client: ${client.name}'),
+                  Text('Freelancer: ${freelancer.name}', style: const TextStyle(color: Colors.grey)),
+                ],
+              ),
               trailing: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,

@@ -1,7 +1,35 @@
 import 'package:flutter/material.dart';
+import 'edit_profile_screen.dart';
+import '../../main.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Map<String, dynamic> userData = {
+    'name': 'John Doe',
+    'email': 'john@freelancer.com',
+    'phone': '+1 234 567 8900',
+    'avatarUrl': 'https://i.pravatar.cc/150?u=u1',
+    'skills': 'Flutter, Dart, Firebase',
+  };
+
+  void _navigateToEditProfile() async {
+    final updatedData = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditProfileScreen(initialData: userData)),
+    );
+
+    if (updatedData != null) {
+      setState(() {
+        userData = updatedData as Map<String, dynamic>;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,15 +64,15 @@ class ProfileScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-                          child: const CircleAvatar(
+                          child: CircleAvatar(
                             radius: 50,
-                            backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=u1'),
+                            backgroundImage: NetworkImage(userData['avatarUrl']),
                           ),
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          'John Doe',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                        Text(
+                          userData['name'],
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                         const Text(
                           'Senior Freelancer',
@@ -67,11 +95,11 @@ class ProfileScreen extends StatelessWidget {
                   Card(
                     child: Column(
                       children: [
-                        _buildProfileItem(Icons.email_outlined, 'Email', 'john@freelancer.com'),
+                        _buildProfileItem(Icons.email_outlined, 'Email', userData['email'], context),
                         const Divider(height: 1),
-                        _buildProfileItem(Icons.phone_outlined, 'Phone', '+1 234 567 8900'),
+                        _buildProfileItem(Icons.phone_outlined, 'Phone', userData['phone'], context),
                         const Divider(height: 1),
-                        _buildProfileItem(Icons.location_on_outlined, 'Location', 'New York, USA'),
+                        _buildProfileItem(Icons.star_outline, 'Skills', userData['skills'], context),
                       ],
                     ),
                   ),
@@ -89,20 +117,27 @@ class ProfileScreen extends StatelessWidget {
                           secondary: const Icon(Icons.notifications_active_outlined),
                         ),
                         const Divider(height: 1),
-                        SwitchListTile(
-                          title: const Text('Dark Mode'),
-                          subtitle: const Text('Toggle dark theme'),
-                          value: false,
-                          activeThumbColor: colorScheme.primary,
-                          onChanged: (val) {},
-                          secondary: const Icon(Icons.dark_mode_outlined),
+                        ValueListenableBuilder<ThemeMode>(
+                          valueListenable: themeNotifier,
+                          builder: (context, currentMode, child) {
+                            return SwitchListTile(
+                              title: const Text('Dark Mode'),
+                              subtitle: const Text('Toggle dark theme'),
+                              value: currentMode == ThemeMode.dark,
+                              activeThumbColor: colorScheme.primary,
+                              onChanged: (val) {
+                                themeNotifier.value = val ? ThemeMode.dark : ThemeMode.light;
+                              },
+                              secondary: const Icon(Icons.dark_mode_outlined),
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: _navigateToEditProfile,
                     icon: const Icon(Icons.edit_outlined),
                     label: const Text('Edit Profile'),
                     style: ElevatedButton.styleFrom(
@@ -137,18 +172,18 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileItem(IconData icon, String title, String value) {
+  Widget _buildProfileItem(IconData icon, String title, String value, BuildContext context) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 0.1),
+          color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: Colors.deepPurple),
+        child: Icon(icon, color: Theme.of(context).colorScheme.primary),
       ),
       title: Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-      subtitle: Text(value, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+      subtitle: Text(value, style: const TextStyle(fontSize: 16)),
     );
   }
 }

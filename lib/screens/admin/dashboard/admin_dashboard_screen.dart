@@ -5,7 +5,9 @@ import '../projects/project_monitoring_screen.dart';
 import '../invoices/invoice_monitoring_screen.dart';
 import '../reports/admin_reports_screen.dart';
 import '../settings/admin_settings_screen.dart';
+import '../notifications/admin_notifications_screen.dart';
 import '../../../utils/constants.dart';
+import '../../../widgets/illustration_header.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -13,20 +15,33 @@ class AdminDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.red[800],
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminNotificationsScreen()));
+            },
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: Colors.red[800]),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF7A68), Color(0xFFFF9E8E)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              ),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -71,11 +86,18 @@ class AdminDashboardScreen extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('System Overview', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
+            const IllustrationHeader(
+              icon: Icons.admin_panel_settings_rounded,
+              title: 'Admin Overview',
+              subtitle: 'Monitor platform health, users, and transactions.',
+              gradientColors: [Color(0xFFFF7A68), Color(0xFFFF9E8E)],
+            ),
+            const SizedBox(height: 32),
+            const Text('System Overview', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             GridView.count(
               crossAxisCount: 2,
@@ -88,19 +110,25 @@ class AdminDashboardScreen extends StatelessWidget {
                 _buildStatCard(context, 'Total Users', dummyUsers.length.toString(), Icons.people, Colors.blue),
                 _buildStatCard(context, 'Total Clients', dummyClients.length.toString(), Icons.business, Colors.purple),
                 _buildStatCard(context, 'Total Projects', dummyProjects.length.toString(), Icons.work, Colors.orange),
-                _buildStatCard(context, 'Total Invoices', dummyInvoices.length.toString(), Icons.receipt, Colors.green),
+                _buildStatCard(context, 'Total Invoices', dummyInvoices.length.toString(), Icons.receipt, const Color(0xFF03DAC6)),
               ],
             ),
             const SizedBox(height: 32),
-            const Text('System Activity', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
+            const Text('System Activity', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Container(
               height: 300,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
               ),
               child: LineChart(
                 LineChartData(
@@ -108,7 +136,7 @@ class AdminDashboardScreen extends StatelessWidget {
                     show: true,
                     drawVerticalLine: false,
                     horizontalInterval: 1,
-                    getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withValues(alpha: 0.2), strokeWidth: 1),
+                    getDrawingHorizontalLine: (value) => FlLine(color: Theme.of(context).dividerColor.withValues(alpha: 0.5), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     show: true,
@@ -118,21 +146,21 @@ class AdminDashboardScreen extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 28,
-                        getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 12)),
                       ),
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          const style = TextStyle(color: Colors.grey, fontSize: 12);
+                          final style = TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 12);
                           Widget text;
                           switch (value.toInt()) {
-                            case 0: text = const Text('Mon', style: style); break;
-                            case 2: text = const Text('Wed', style: style); break;
-                            case 4: text = const Text('Fri', style: style); break;
-                            case 6: text = const Text('Sun', style: style); break;
-                            default: text = const Text('', style: style); break;
+                            case 0: text = Text('Mon', style: style); break;
+                            case 2: text = Text('Wed', style: style); break;
+                            case 4: text = Text('Fri', style: style); break;
+                            case 6: text = Text('Sun', style: style); break;
+                            default: text = Text('', style: style); break;
                           }
                           return SideTitleWidget(axisSide: meta.axisSide, child: text);
                         },
@@ -144,19 +172,20 @@ class AdminDashboardScreen extends StatelessWidget {
                     LineChartBarData(
                       spots: [const FlSpot(0, 1), const FlSpot(1, 1.5), const FlSpot(2, 1.4), const FlSpot(3, 3.4), const FlSpot(4, 2), const FlSpot(5, 2.2), const FlSpot(6, 1.8)],
                       isCurved: true,
-                      color: Colors.red[800],
+                      color: const Color(0xFFFF7A68),
                       barWidth: 4,
                       isStrokeCapRound: true,
-                      dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 4, color: Colors.white, strokeWidth: 2, strokeColor: Colors.red[800]!)),
+                      dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 4, color: Theme.of(context).cardTheme.color!, strokeWidth: 2, strokeColor: const Color(0xFFFF7A68))),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: Colors.red[800]!.withValues(alpha: 0.1),
+                        color: const Color(0xFFFF7A68).withValues(alpha: 0.1),
                       ),
                     )
                   ],
                 ),
               ),
             ),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -167,24 +196,26 @@ class AdminDashboardScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))],
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: color.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 28),
-          ),
+          Icon(icon, color: color, size: 32),
           const Spacer(),
-          Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87)),
+          Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: color)),
           const SizedBox(height: 4),
-          Text(title, style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500, fontSize: 13)),
+          Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontWeight: FontWeight.w500, fontSize: 13)),
         ],
       ),
     );

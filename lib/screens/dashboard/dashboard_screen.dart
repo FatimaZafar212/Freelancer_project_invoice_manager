@@ -4,6 +4,8 @@ import '../clients/client_list_screen.dart';
 import '../projects/project_list_screen.dart';
 import '../invoices/invoice_list_screen.dart';
 import '../../utils/constants.dart';
+import '../../widgets/illustration_header.dart';
+import '../../theme/theme.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -27,19 +29,26 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const IllustrationHeader(
+              icon: Icons.waving_hand_rounded,
+              title: 'Welcome back!',
+              subtitle: 'Here is what is happening with your freelance business today.',
+              gradientColors: [Color(0xFF6B48FF), Color(0xFF9075FF)],
+            ),
+            const SizedBox(height: 32),
             const Text('Overview', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _buildSummaryCard(context, 'Clients', dummyClients.length.toString(), Icons.people, Colors.blue)),
-                const SizedBox(width: 16),
-                Expanded(child: _buildSummaryCard(context, 'Projects', dummyProjects.length.toString(), Icons.work, Colors.orange)),
-                const SizedBox(width: 16),
-                Expanded(child: _buildSummaryCard(context, 'Invoices', dummyInvoices.length.toString(), Icons.receipt, Colors.green)),
+                Expanded(child: _buildVividSummaryCard(context, 'Clients', dummyClients.length.toString(), Icons.people, primaryColor)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildVividSummaryCard(context, 'Projects', dummyProjects.length.toString(), Icons.work, secondaryColor)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildVividSummaryCard(context, 'Invoices', dummyInvoices.length.toString(), Icons.receipt, const Color(0xFF03DAC6))),
               ],
             ),
             const SizedBox(height: 32),
@@ -58,11 +67,17 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Container(
               height: 300,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
               ),
               child: BarChart(
                 BarChartData(
@@ -75,7 +90,7 @@ class DashboardScreen extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (double value, TitleMeta meta) {
-                          const style = TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12);
+                          final style = TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontWeight: FontWeight.bold, fontSize: 12);
                           String text;
                           switch (value.toInt()) {
                             case 0: text = 'Jan'; break;
@@ -107,6 +122,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -119,51 +135,65 @@ class DashboardScreen extends StatelessWidget {
       barRods: [
         BarChartRodData(
           toY: y,
-          color: Colors.deepPurpleAccent,
+          color: primaryColor,
           width: 16,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+          borderRadius: BorderRadius.circular(8),
+          backDrawRodData: BackgroundBarChartRodData(
+            show: true,
+            toY: 10000,
+            color: primaryColor.withValues(alpha: 0.1),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildSummaryCard(BuildContext context, String title, String value, IconData icon, Color color) {
+  Widget _buildVividSummaryCard(BuildContext context, String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: color,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: color),
+          Icon(icon, color: Colors.white, size: 28),
           const SizedBox(height: 12),
-          Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: color)),
-          Text(title, style: TextStyle(color: color.withValues(alpha: 0.8), fontWeight: FontWeight.w500)),
+          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+          Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 
   Widget _buildQuickAction(BuildContext context, String title, IconData icon, Widget screen) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(24),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
+              color: theme.cardTheme.color,
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
+              boxShadow: [
+                BoxShadow(color: theme.colorScheme.primary.withValues(alpha: 0.1), blurRadius: 15, offset: const Offset(0, 5))
+              ],
             ),
-            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 28),
+            child: Icon(icon, color: theme.colorScheme.primary, size: 28),
           ),
-          const SizedBox(height: 8),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+          const SizedBox(height: 12),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );
