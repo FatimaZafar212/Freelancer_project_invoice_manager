@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../utils/constants.dart';
+import '../../services/firestore_service.dart';
 import 'create_invoice_screen.dart';
 import 'invoice_preview_screen.dart';
-import 'package:intl/intl.dart';
-import '../../widgets/empty_state_view.dart';
-import '../../theme/theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class InvoiceListScreen extends StatelessWidget {
   const InvoiceListScreen({super.key});
@@ -13,86 +11,99 @@ class InvoiceListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Invoices')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()));
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('New Invoice'),
-      ),
-      body: dummyInvoices.isEmpty
-          ? const EmptyStateView(
-              message: "You haven't generated any invoices yet.",
-              icon: Icons.receipt_long_outlined,
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: dummyInvoices.length,
-              itemBuilder: (context, index) {
-                final invoice = dummyInvoices[index];
-                final client = dummyClients.firstWhere((c) => c.id == invoice.clientId);
-                
-                final isPaid = invoice.status == 'Paid';
-                final statusColor = isPaid ? const Color(0xFF03DAC6) : secondaryColor;
-                final dateFormat = DateFormat('MMM dd, yyyy');
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoice: invoice)));
-                    },
-                    leading: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.receipt_long, color: Theme.of(context).colorScheme.primary),
-                    ),
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(invoice.id, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        Text(
-                          '${AppConstants.currencySymbol}${invoice.totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                      ],
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('To: ${client.name}'),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Due: ${dateFormat.format(invoice.dueDate)}'),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  invoice.status,
-                                  style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
+
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirestoreService().getInvoices(),
+        builder: (context, snapshot) {
+
+          // ✅ FIX 1: loading safe
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // ✅ FIX 2: null safety
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text("No data found"));
+          }
+
+          final invoices = snapshot.data!.docs;
+
+          // ✅ FIX 3: empty check
+          if (invoices.isEmpty) {
+            return const Center(child: Text("No invoices yet"));
+          }
+
+          return ListView.builder(
+            itemCount: invoices.length,
+            itemBuilder: (context, index) {
+              final invoice = invoices[index].data() as Map<String, dynamic>;
+
+              return Card(
+                margin: const EdgeInsets.all(10),
+                child: ListTile(
+                  title: Text("Invoice ${index + 1}"),
+
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Client: ${invoice['clientId'] ?? 'N/A'}"),
+                      Text("Status: ${invoice['status'] ?? 'Pending'}"),
+                    ],
                   ),
-                );
-              },
-            ),
+
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Rs ${invoice['total'] ?? 0}"),
+
+                      const SizedBox(height: 5),
+
+                      GestureDetector(
+                        onTap: () async {
+                          await invoices[index].reference.update({
+                            'status': 'Paid'
+                          });
+                        },
+                        child: const Text(
+                          "Mark Paid",
+                          style: TextStyle(color: Colors.green),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // ❌ DELETE
+                  onLongPress: () async {
+                    await invoices[index].reference.delete();
+                  },
+
+                  // 👉 OPEN PREVIEW
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => InvoicePreviewScreen(
+                          invoiceData: invoice,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
