@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'theme/theme.dart';
 import 'screens/splash_screen.dart';
+import 'firebase_options.dart';
+final ValueNotifier<ThemeMode> themeNotifier =
+ValueNotifier(ThemeMode.light);
 
-final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-void main() {
+  try {
+    await Firebase.initializeApp(    options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    print("Firebase error: $e");
+  }
+
   runApp(const FreelancerApp());
 }
 
@@ -15,13 +26,13 @@ class FreelancerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
-      builder: (context, ThemeMode currentMode, child) {
+      builder: (context, ThemeMode mode, child) {
         return MaterialApp(
-          title: 'Freelancer Manager',
           debugShowCheckedModeBanner: false,
+          title: 'Freelancer App',
           theme: appTheme,
           darkTheme: appDarkTheme,
-          themeMode: currentMode,
+          themeMode: mode,
           home: const SplashScreen(),
         );
       },

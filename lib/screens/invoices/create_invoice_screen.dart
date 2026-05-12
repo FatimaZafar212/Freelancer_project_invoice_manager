@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/constants.dart';
+import '../../services/firestore_service.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
   const CreateInvoiceScreen({super.key});
@@ -9,24 +9,61 @@ class CreateInvoiceScreen extends StatefulWidget {
 }
 
 class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
-  String? selectedClientId;
-  String? selectedProjectId;
-  List<InvoiceItem> items = [];
-  final descController = TextEditingController();
-  final amountController = TextEditingController();
+  final TextEditingController clientController = TextEditingController();
+  final TextEditingController projectController = TextEditingController();
+  final TextEditingController descController = TextEditingController();
+  final TextEditingController amountController = TextEditingController();
 
-  double get total => items.fold(0, (sum, i) => sum + i.amount);
+  List<Map<String, dynamic>> items = [];
+
+  double get total =>
+      items.fold(0, (sum, item) => sum + (item['amount'] as double));
 
   void addItem() {
-    if (descController.text.isNotEmpty && amountController.text.isNotEmpty) {
+    if (descController.text.isNotEmpty &&
+        amountController.text.isNotEmpty) {
       setState(() {
-        items.add(InvoiceItem(
-          description: descController.text,
-          amount: double.tryParse(amountController.text) ?? 0,
-        ));
+        items.add({
+          'description': descController.text,
+          'amount': double.tryParse(amountController.text) ?? 0,
+        });
+
         descController.clear();
         amountController.clear();
       });
+    }
+  }
+
+  Future<void> saveInvoice() async {
+    if (clientController.text.isEmpty ||
+        projectController.text.isEmpty ||
+        items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all fields")),
+      );
+      return;
+    }
+
+    try {
+      await FirestoreService().addInvoice(
+        clientId: clientController.text,
+        projectId: projectController.text,
+        total: total,
+        items: items.map((e) => {
+          'description': e['description'],
+          'amount': e['amount'],
+        }).toList(),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Invoice Saved Successfully")),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
@@ -34,77 +71,83 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('New Invoice')),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Select Client',
-                prefixIcon: const Icon(Icons.person),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              initialValue: selectedClientId,
-              items: dummyClients.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
-              onChanged: (val) => setState(() => selectedClientId = val),
+
+            // CLIENT
+            TextField(
+              controller: clientController,
+              decoration: const InputDecoration(labelText: 'Client Name'),
             ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Select Project',
-                prefixIcon: const Icon(Icons.work),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              initialValue: selectedProjectId,
-              items: dummyProjects.map((p) => DropdownMenuItem(value: p.id, child: Text(p.title))).toList(),
-              onChanged: (val) => setState(() => selectedProjectId = val),
+
+            const SizedBox(height: 10),
+
+            // PROJECT
+            TextField(
+              controller: projectController,
+              decoration: const InputDecoration(labelText: 'Project'),
             ),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 20),
+
+            // ITEM INPUT
             Row(
               children: [
                 Expanded(
-                  flex: 2,
                   child: TextField(
                     controller: descController,
-                    decoration: InputDecoration(labelText: 'Item Description', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                    decoration: const InputDecoration(labelText: 'Description'),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
                     controller: amountController,
                     keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: 'Amount', prefixText: AppConstants.currencySymbol, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                    decoration: const InputDecoration(labelText: 'Amount'),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.blue, size: 32),
+                  icon: const Icon(Icons.add),
                   onPressed: addItem,
                 )
               ],
             ),
-            const SizedBox(height: 16),
-            if (items.isNotEmpty) ...[
-              const Text('Invoice Items', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
-              ...items.map((e) => ListTile(
-                title: Text(e.description),
-                trailing: Text('${AppConstants.currencySymbol}${e.amount.toStringAsFixed(2)}'),
-              )),
-              const Divider(),
-              ListTile(
-                title: const Text('Total', style: TextStyle(fontWeight: FontWeight.bold)),
-                trailing: Text('${AppConstants.currencySymbol}${total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+
+            const SizedBox(height: 20),
+
+            // ITEMS LIST
+            Expanded(
+              child: ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return ListTile(
+                    title: Text(item['description']),
+                    trailing: Text(item['amount'].toString()),
+                  );
+                },
               ),
-            ],
-            const SizedBox(height: 32),
+            ),
+
+            // TOTAL
+            Text(
+              "Total: $total",
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // SAVE BUTTON
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-              ),
+              onPressed: saveInvoice,
               child: const Text('Generate Invoice'),
-            )
+            ),
           ],
         ),
       ),

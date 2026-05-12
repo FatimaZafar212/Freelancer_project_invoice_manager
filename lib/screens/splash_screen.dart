@@ -10,21 +10,34 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
+
+    // Animation setup
     _controller = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
     )..forward();
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
 
-    Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+
+    // Safe navigation after delay
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
     });
   }
 
@@ -44,7 +57,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.workspace_premium, size: 100, color: Colors.white),
+              const Icon(
+                Icons.workspace_premium,
+                size: 100,
+                color: Colors.white,
+              ),
               const SizedBox(height: 20),
               Text(
                 'Freelancer Manager',
